@@ -3,7 +3,7 @@ import { books, authors, genres, BOOKS_PER_PAGE } from './data.js'
 let page = 1;
 let matches = books
 
-// BOOKS THAT APPEAR AT THE START OF THE APPLICATION 
+//   BOOKS THAT APPEAR AT THE START OF THE APPLICATION 
 const starting = document.createDocumentFragment()
 
 for (const { author, id, image, title } of matches.slice(0, BOOKS_PER_PAGE)) {
@@ -52,19 +52,7 @@ function creatingDropdowns(items, query, text) {
 creatingDropdowns(genres, '[data-search-genres]', 'All Genres')
 creatingDropdowns(authors, '[data-search-authors]', 'All Authors')
 
-///////////////////////////////////  THEME HANDLING  ////////////////////////////////////////////////////
-if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.querySelector('[data-settings-theme]').value = 'night'
-    document.documentElement.style.setProperty('--color-dark', '255, 255, 255');
-    document.documentElement.style.setProperty('--color-light', '10, 10, 20');
-} else {
-    document.querySelector('[data-settings-theme]').value = 'day'
-    document.documentElement.style.setProperty('--color-dark', '10, 10, 20');
-    document.documentElement.style.setProperty('--color-light', '255, 255, 255');
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////// 
+//   SHOW MORE BUTTON, DISPLAYING THE NUMBER OF BOOKS REMAINING
 document.querySelector('[data-list-button]').innerText = `Show more (${books.length - BOOKS_PER_PAGE})`
 document.querySelector('[data-list-button]').disabled = (matches.length - (page * BOOKS_PER_PAGE)) > 0
 
@@ -72,7 +60,7 @@ document.querySelector('[data-list-button]').innerHTML = `
     <span>Show more</span>
     <span class="list__remaining"> (${(matches.length - (page * BOOKS_PER_PAGE)) > 0 ? (matches.length - (page * BOOKS_PER_PAGE)) : 0})</span>
 `
-//////////////////////////////////  EVENT LISTENERS FOR OVERLAYS   //////////////////////////////////////////
+//    EVENT LISTENERS FOR OVERLAYS
 document.querySelector('[data-search-cancel]').addEventListener('click', () => {
     document.querySelector('[data-search-overlay]').open = false
 })
@@ -93,14 +81,18 @@ document.querySelector('[data-header-settings]').addEventListener('click', () =>
 document.querySelector('[data-list-close]').addEventListener('click', () => {
     document.querySelector('[data-list-active]').open = false
 })
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////   THEME SETTINGS FORM    ////////////////////////////////////////////////////////
-document.querySelector('[data-settings-form]').addEventListener('submit', (event) => {
-    event.preventDefault()
-    const formData = new FormData(event.target)
-    const { theme } = Object.fromEntries(formData)
+// Theme handling and settings had repetitive code, in different parts of the codebase
+// Therefore I created a class for theme handling and settings, to combine every theme-related code
+// This reduces repetitive code and makes it easier to maintain all the theme-related code
+class ThemeManager {
+    constructor() {
+        this.initTheme()
+        this.event()
+    }
 
+// Applying CSS styling for the theme
+  applyTheme(theme) {
     if (theme === 'night') {
         document.documentElement.style.setProperty('--color-dark', '255, 255, 255');
         document.documentElement.style.setProperty('--color-light', '10, 10, 20');
@@ -108,12 +100,31 @@ document.querySelector('[data-settings-form]').addEventListener('submit', (event
         document.documentElement.style.setProperty('--color-dark', '10, 10, 20');
         document.documentElement.style.setProperty('--color-light', '255, 255, 255');
     }
-    
-    document.querySelector('[data-settings-overlay]').open = false
-})
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  }
 
-////////////////////////////     SEARCH FUNCTIONALITY    ////////////////////////////////////////////////////////
+// Initializing the theme according to user prefence
+  initTheme() {
+    const darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    const preferedTheme = darkMode ? 'night' : 'day'
+    this.applyTheme(preferedTheme)
+    document.querySelector('[data-settings-theme]').value = preferedTheme
+  }
+
+// Event for theme settings form
+  event() {
+    document.querySelector('[data-settings-form]').addEventListener('submit', (event) => {
+        event.preventDefault()
+        const formData = new FormData(event.target)
+        const { theme } = Object.fromEntries(formData)
+        this.applyTheme(theme)
+        document.querySelector('[data-settings-overlay]').open = false
+    })
+  }
+}
+
+new ThemeManager()
+
+//    SEARCH FUNCTIONALITY   
 document.querySelector('[data-search-form]').addEventListener('submit', (event) => {
     event.preventDefault()
     const formData = new FormData(event.target)
@@ -181,7 +192,7 @@ document.querySelector('[data-search-form]').addEventListener('submit', (event) 
     document.querySelector('[data-search-overlay]').open = false
 })
 
-////////////////////////////    SHOW MORE BUTTON    ////////////////////////////////////////////////////////
+//   SHOW MORE BUTTON    
 document.querySelector('[data-list-button]').addEventListener('click', () => {
     const fragment = document.createDocumentFragment()
 
@@ -209,7 +220,7 @@ document.querySelector('[data-list-button]').addEventListener('click', () => {
     page += 1
 })
 
-///////////////////////////////  BOOK PREVIEW DETAILS  ///////////////////////////////////////////
+//   BOOK PREVIEW DETAILS 
 document.querySelector('[data-list-items]').addEventListener('click', (event) => {
     const pathArray = Array.from(event.path || event.composedPath())
     let active = null
